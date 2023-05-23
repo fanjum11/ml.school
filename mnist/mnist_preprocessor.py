@@ -30,6 +30,8 @@ def save_splits(base_dir, train, validation, test):
     validation_path = Path(base_dir) / "validation" 
     test_path = Path(base_dir) / "test"
     
+    print (f"train_path is {train_path}")
+    
     train_path.mkdir(parents=True, exist_ok=True)
     validation_path.mkdir(parents=True, exist_ok=True)
     test_path.mkdir(parents=True, exist_ok=True)
@@ -85,20 +87,6 @@ def preprocess(base_dir, train_data_filepath, test_data_filepath):
     df_train = pd.read_csv(train_data_filepath)
     df_test = pd.read_csv(test_data_filepath)
     
-    numerical_preprocessor = Pipeline(steps=[
-        ("imputer", SimpleImputer(strategy="mean")),
-        ("scaler", StandardScaler())
-    ])
-
-    numerical_columns = [column for column in df_train.columns]
-    numerical_columns.remove('label')
-    
-    
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ("numerical", numerical_preprocessor, numerical_columns),
-        ]
-    )
     
     X = df_train.copy()
     columns = list(X.columns)
@@ -125,33 +113,35 @@ def preprocess(base_dir, train_data_filepath, test_data_filepath):
     X_train.drop(["label"], axis=1, inplace=True)
     X_validation.drop(["label"], axis=1, inplace=True)
     X_test.drop(["label"], axis=1, inplace=True)
+    X_train = X_train/255.0
+    X_validation = X_validation/255.0
+    X_test = X_test/255.0 
+    
 
     # Let's generate a dataset that we can later use to compute
     # baseline statistics and constraints about the data that we
     # used to train our model.
     
-    print ("--------------------------------------------------")
     ### THIS IS CRASHING THE VM; WHY IS THAT
     #generate_baseline_dataset("train", base_dir, X_train, y_train)
     print ("--------------------------------------------------11")
     
     # To generate baseline constraints about the quality of the
     # model's predictions, we will use the test set.
-    generate_baseline_dataset("test", base_dir, X_test, y_test)
+    ##generate_baseline_dataset("test", base_dir, X_test, y_test)
     
     
     # Transform the data using the Scikit-Learn pipeline.
-    X_train = preprocessor.fit_transform(X_train)
-    X_validation = preprocessor.transform(X_validation)
-    X_test = preprocessor.transform(X_test)
-    print ("--------------------------------------------------22")
+   # X_train = preprocessor.fit_transform(X_train)
+   # X_validation = preprocessor.transform(X_validation)
+    # X_test = preprocessor.transform(X_test)
         
     train = np.concatenate((X_train, np.expand_dims(y_train, axis=1)), axis=1)
     validation = np.concatenate((X_validation, np.expand_dims(y_validation, axis=1)), axis=1)
     test = np.concatenate((X_test, np.expand_dims(y_test, axis=1)), axis=1)
    
     save_splits(base_dir, train, validation, test)
-    save_pipeline(base_dir, pipeline=preprocessor)
+    #save_pipeline(base_dir, pipeline=preprocessor)
     print ("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
     
     save_splits(base_dir, train, validation, test)
